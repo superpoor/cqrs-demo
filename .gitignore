@@ -1,0 +1,17 @@
+# Python
+command-service/venv/
+__pycache__/
+*.pyc
+
+# Node.js
+query-service/node_modules/
+
+# Environment variables
+.env
+*.env.local
+
+# OS
+.DS_Store
+
+# Logs
+*.log

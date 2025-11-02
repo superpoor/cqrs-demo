@@ -1,0 +1,65 @@
+services:
+  # Command Service (Write Side)
+  command-service:
+    build: ./command-service
+    ports:
+      - "5001:5001"
+    environment:
+      - PYTHONUNBUFFERED=1 
+      - DATABASE_URL=postgres://user:password@postgres_db:5432/todos_write
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - FLASK_DEBUG=1 # Enable debug mode (hot reload)
+      - FLASK_ENV=development # Enable development mode
+    volumes:
+      - ./command-service:/app # Bind mount for hot reload
+      - /app/venv # Bind mount for hot reload
+    depends_on:
+      - postgres_db
+      - rabbitmq
+
+  # Query Service (Read Side)
+  query-service:
+    build: ./query-service
+    ports:
+      - "5002:5002"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MONGO_URL=mongodb://mongo_db:27017/todos_read
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - mongo_db
+      - rabbitmq
+    volumes:
+      - ./query-service:/app
+      - /app/node_modules # Avoids overwriting node_modules inside the container
+
+  # Write Database
+  postgres_db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=todos_write
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Read Database
+  mongo_db:
+    image: mongo:latest
+    # ports:
+    #   - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    # ports:
+    #   - "5672:5672"  # For application communication
+    #   - "15672:15672" # For the management UI
+  
+volumes:
+  postgres_data:
+  mongo_data:
